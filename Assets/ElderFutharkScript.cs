@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Linq;
-using UnityEngine;
 using KModkit;
+using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class ElderFutharkScript : MonoBehaviour
 {
-    //Initializing variables
     public KMAudio Audio;
     public KMBombInfo Bomb;
 
@@ -45,18 +44,6 @@ public class ElderFutharkScript : MonoBehaviour
     private int currentRune = 0;
     private int timesPressed = 0;
 
-    void Awake()
-    {
-        //stuff for the module
-        moduleId = moduleIdCounter++;
-        Module.OnInteract += delegate { StartCoroutine(CrashDownSetup()); moduleStarted = true; return true; };
-        for (int i = 0; i < Runes.Length; i++)
-        {
-            Runes[i].OnInteract += RunePressed(i);
-        }
-        
-    }
-
     private KMSelectable.OnInteractHandler RunePressed(int rune)
     {
         return delegate
@@ -85,6 +72,23 @@ public class ElderFutharkScript : MonoBehaviour
 
     void Start()
     {
+        moduleId = moduleIdCounter++;
+
+        // Show the runes the first time the module is selected
+        Module.OnInteract += delegate
+        {
+            StartCoroutine(CrashDownSetup());
+            moduleStarted = true;
+            return true;
+        };
+
+        // Set the runes to invisible until they appear
+        for (int i = 0; i < Runes.Length; i++)
+        {
+            Runes[i].gameObject.SetActive(false);
+            Runes[i].OnInteract += RunePressed(i);
+        }
+
         //Assigning RuneLetters with the different positions
         RuneLetters = new[]
         {
@@ -103,7 +107,7 @@ public class ElderFutharkScript : MonoBehaviour
         {
             pickedRuneLetters[i] = Random.Range(0, RuneLetters[i].Length);
             pickedRuneNames[i] = ElderFuthark[pickedRuneLetters[i]];
-            Debug.LogFormat(@"[Elder Futhark #{0}] The {1}th rune is {2}", moduleId, i+1, pickedRuneNames[i]);
+            Debug.LogFormat(@"[Elder Futhark #{0}] The {1}th rune is {2}", moduleId, i + 1, pickedRuneNames[i]);
         }
 
         //Generating 6 keywords
@@ -121,7 +125,7 @@ public class ElderFutharkScript : MonoBehaviour
             Keywords[i] += AlphabetNumbers[i];
             Keywords[i] += AlphabetNumbers[pickedRuneNames[i].Length * 10 % 26];
             Keywords[i] += AlphabetNumbers[(i + 1 + pickedRuneNames[i].Length) % 26];
-            Debug.LogFormat(@"[Elder Futhark #{0}] The keyword for the {1}th rune is {2}", moduleId, i+1, Keywords[i]);
+            Debug.LogFormat(@"[Elder Futhark #{0}] The keyword for the {1}th rune is {2}", moduleId, i + 1, Keywords[i]);
 
         }
 
@@ -133,16 +137,16 @@ public class ElderFutharkScript : MonoBehaviour
             for (int j = 0; j < pickedRuneName.Length; j++)
 
             {
-                pickedRuneNamesCipher[i] += AlphabetNumbers[(Array.IndexOf(AlphabetNumbers, Char.ToLowerInvariant(pickedRuneName[j])) + Array.IndexOf(AlphabetNumbers, Char.ToLowerInvariant(Keywords[i][j % Keywords[i].Length]))) % 26];
+                pickedRuneNamesCipher[i] += AlphabetNumbers[(Array.IndexOf(AlphabetNumbers, char.ToLowerInvariant(pickedRuneName[j])) + Array.IndexOf(AlphabetNumbers, char.ToLowerInvariant(Keywords[i][j % Keywords[i].Length]))) % 26];
             }
-            Debug.LogFormat(@"[Elder Futhark #{0}] The encrypted name of the {1}th rune is {2}. The required sequence for the {1}th rune is: {3}", moduleId, i+1, pickedRuneNamesCipher[i], "NEEDS WORK");
+            Debug.LogFormat(@"[Elder Futhark #{0}] The encrypted name of the {1}th rune is {2}. The required sequence for the {1}th rune is: {3}", moduleId, i + 1, pickedRuneNamesCipher[i], "NEEDS WORK");
         }
     }
 
     //Placing the word on the module
     private IEnumerator SetWord()
     {
-        
+
         for (int i = 0; i < RuneLetters.Length; i++)
         {
             DustSystemLetters[i].GetComponent<ParticleSystem>().Play();
@@ -178,24 +182,17 @@ public class ElderFutharkScript : MonoBehaviour
 
         }
         RuneTransforms[pos].localEulerAngles = startingRot;
-
-
-        elapsed = 0f;
     }
 
     //Let the pebbles fly down on the board
     private IEnumerator CrashDown(int pos)
     {
-
         while (RuneTransforms[pos].localPosition.y > 0.013f)
         {
             Vector3 newPos = RuneTransforms[pos].localPosition;
             newPos.y = newPos.y - 0.05f;
-
             RuneTransforms[pos].localPosition = newPos;
-
             yield return null;
-
         }
 
         Vector3 endPos = RuneTransforms[pos].localPosition;
@@ -203,23 +200,18 @@ public class ElderFutharkScript : MonoBehaviour
         RuneTransforms[pos].localPosition = endPos;
         DustSystemRunes[pos].GetComponent<ParticleSystem>().Play();
         StartCoroutine(PebbleWiggle(pos, RuneTransforms[pos].localEulerAngles));
-
     }
 
     //Generating a random order for the pebbles to crash down
     private IEnumerator CrashDownSetup()
     {
-
-        if (moduleStarted)
-            yield break;
-
         var positions = Enumerable.Range(0, Runes.Length).ToList();
 
         for (int i = 0; i < Runes.Length; i++)
         {
             int index = Random.Range(0, positions.Count);
             int pos = positions[index];
-            RuneTransforms[pos].gameObject.SetActive(true);
+            Runes[pos].gameObject.SetActive(true);
             StartCoroutine(CrashDown(pos));
             positions.RemoveAt(index);
             yield return new WaitForSeconds(0.1f);
@@ -227,19 +219,13 @@ public class ElderFutharkScript : MonoBehaviour
 
         yield return new WaitForSeconds(0.5f);
         StartCoroutine(SetWord());
-
     }
 
     int Factorial(int n)
     {
         int fact = 1;
-
         for (int i = n; i > 0; i--)
-        {
             fact = fact * i;
-        }
-
         return fact;
     }
-
 }
