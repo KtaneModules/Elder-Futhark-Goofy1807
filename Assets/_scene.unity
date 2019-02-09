@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657826, g: 0.49641263, b: 0.57481676, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -251,6 +251,11 @@ Prefab:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 114467019066618740, guid: 886997b16bf37b24bb9f6454cb6ce385,
+        type: 2}
+      propertyPath: Sounds.Array.size
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 4710983549423468, guid: 886997b16bf37b24bb9f6454cb6ce385, type: 2}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -283,6 +288,21 @@ Prefab:
       propertyPath: m_RootOrder
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 114467019066618740, guid: 886997b16bf37b24bb9f6454cb6ce385,
+        type: 2}
+      propertyPath: Sounds.Array.data[0]
+      value: 
+      objectReference: {fileID: 8300000, guid: 18a48a08ad898bc4bb514b4a7b39e05b, type: 3}
+    - target: {fileID: 114467019066618740, guid: 886997b16bf37b24bb9f6454cb6ce385,
+        type: 2}
+      propertyPath: Sounds.Array.data[1]
+      value: 
+      objectReference: {fileID: 8300000, guid: ab8d9c7519d97334093ea91df1bbd406, type: 3}
+    - target: {fileID: 114467019066618740, guid: 886997b16bf37b24bb9f6454cb6ce385,
+        type: 2}
+      propertyPath: Sounds.Array.data[2]
+      value: 
+      objectReference: {fileID: 8300000, guid: b1eb980bd6bac3640b8df9ab0acc9ce3, type: 3}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 886997b16bf37b24bb9f6454cb6ce385, type: 2}
   m_IsPrefabParent: 0

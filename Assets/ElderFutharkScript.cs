@@ -23,6 +23,7 @@ public class ElderFutharkScript : MonoBehaviour
     public GameObject[] RuneLetters_5;
     public GameObject[] RuneLetters_6;
     public Material[] Materials;
+    public AudioClip[] Sounds;
 
     public GameObject[] DustSystemLetters;
     public GameObject[] DustSystemRunes;
@@ -48,9 +49,12 @@ public class ElderFutharkScript : MonoBehaviour
     {
         return delegate
         {
+            StartCoroutine(PebbleWiggle(rune, RuneTransforms[rune].localEulerAngles));
+            Audio.PlaySoundAtTransform("RockClick", transform);
             Runes[rune].AddInteractionPunch();
-            if (ElderFutharkTranslated[rune].Contains(pickedRuneNamesCipher[currentRune][timesPressed].ToString()))
+            if (ElderFutharkTranslated[rune].Contains(pickedRuneNamesCipher[currentRune][timesPressed]))
             {
+                Debug.LogFormat(@"[Elder Futhark #{0}] You pressed {1}, expecting {2}. Well Done", moduleId, ElderFutharkTranslated[rune], pickedRuneNamesCipher[currentRune][timesPressed]);
                 timesPressed++;
                 if (timesPressed == pickedRuneNamesCipher[currentRune].Length)
                 {
@@ -63,9 +67,10 @@ public class ElderFutharkScript : MonoBehaviour
             else
             {
                 GetComponent<KMBombModule>().HandleStrike();
+                Debug.LogFormat(@"[Elder Futhark #{0}] You pressed {1}, expecting {2}. Strike. Rune resetted", moduleId, ElderFutharkTranslated[rune], pickedRuneNamesCipher[currentRune][timesPressed]);
                 timesPressed = 0;
             }
-
+            
             return false;
         };
     }
@@ -149,6 +154,7 @@ public class ElderFutharkScript : MonoBehaviour
 
         for (int i = 0; i < RuneLetters.Length; i++)
         {
+            Audio.PlaySoundAtTransform("RuneLetters", transform);
             DustSystemLetters[i].GetComponent<ParticleSystem>().Play();
             yield return new WaitForSeconds(0.3f);
             RuneLetters[i][pickedRuneLetters[i]].SetActive(true);
@@ -163,7 +169,7 @@ public class ElderFutharkScript : MonoBehaviour
     //Making the pebbles wiggle
     private IEnumerator PebbleWiggle(int pos, Vector3 startingRot)
     {
-        var duration = 0.25f;
+        var duration = 0.3f;
         var elapsed = 0f;
 
         while (elapsed < duration)
@@ -171,9 +177,9 @@ public class ElderFutharkScript : MonoBehaviour
 
             Vector3 Rot = startingRot;
 
-            Rot.x = Rot.x + Mathf.Sin(Time.time * 10f) * 10f;
-            Rot.y = Rot.y + Mathf.Sin(Time.time * 10f) * 5f;
-            Rot.z = Rot.z + Mathf.Sin(Time.time * 10f) * 10f;
+            Rot.x = Rot.x + Mathf.Sin(Time.time * 30f) * 10f;
+            Rot.y = Rot.y + Mathf.Sin(Time.time * 20f) * 5f;
+            Rot.z = Rot.z + Mathf.Sin(Time.time * 30f) * 10f;
 
             RuneTransforms[pos].localEulerAngles = Rot;
 
@@ -199,12 +205,16 @@ public class ElderFutharkScript : MonoBehaviour
         endPos.y = 0.013f;
         RuneTransforms[pos].localPosition = endPos;
         DustSystemRunes[pos].GetComponent<ParticleSystem>().Play();
+        Audio.PlaySoundAtTransform("RockSpawn", transform);
         StartCoroutine(PebbleWiggle(pos, RuneTransforms[pos].localEulerAngles));
     }
 
     //Generating a random order for the pebbles to crash down
     private IEnumerator CrashDownSetup()
     {
+        if (moduleStarted)
+            yield break;
+
         var positions = Enumerable.Range(0, Runes.Length).ToList();
 
         for (int i = 0; i < Runes.Length; i++)
