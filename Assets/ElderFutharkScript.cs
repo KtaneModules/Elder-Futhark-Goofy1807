@@ -97,8 +97,8 @@ public class ElderFutharkScript : MonoBehaviour
             StartCoroutine(CrashDownSetup());
             moduleStarted = true;
             Activator.gameObject.SetActive(false);
-            Module.Children = Runes;
-            Module.UpdateChildren();
+           Module.Children = Runes;
+           UpdateChildren();
             return true;
         };
 
@@ -268,6 +268,28 @@ public class ElderFutharkScript : MonoBehaviour
         for (int i = n; i > 0; i--)
             fact = fact * i;
         return fact;
+    }
+
+    public void UpdateChildren()
+    {
+        GetComponent<KMSelectable>().UpdateChildren();
+        #if UNITY_EDITOR
+        for (int i = 0; i < GetComponent<KMSelectable>().Children.Count(); i++)
+        {
+            var selectable = GetComponent<KMSelectable>().Children[i];
+            if (selectable == null && GetComponent<TestSelectable>().Children[i] != null)
+            {
+                Destroy(GetComponent<TestSelectable>().Children[i].GetComponentInChildren<TestSelectableArea>());
+                GetComponent<TestSelectable>().Children[i] = null;
+            }
+            else if (selectable != null && GetComponent<TestSelectable>().Children[i] == null)
+            {
+                selectable.gameObject.AddComponent<TestSelectable>();
+                GetComponent<TestSelectable>().Children[i] = selectable.GetComponent<TestSelectable>();
+            }
+
+        }
+        #endif
     }
 
 #pragma warning disable 0414
