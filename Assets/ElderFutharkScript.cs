@@ -292,24 +292,25 @@ public class ElderFutharkScript : MonoBehaviour
         #endif
     }
 
-#pragma warning disable 0414
-    private readonly string TwitchHelpMessage = "!{0} click runename [click a rune according to it`s name]";
-#pragma warning restore 0414
-
-    private List<KMSelectable> ProcessTwitchCommand(string command)
-    {
-        var runetoPress = new List<KMSelectable>();
-        Match m;
-        if ((m = Regex.Match(command, @"^\s*(click)\s+(?<runes>abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Success)
-        {
-            var runeName = (m.Groups["runes"].Value);
-            var ix = Array.IndexOf(ElderFuthark, runeName);
-            if (ix == -1)
-                return null;
-            runetoPress.Add(Runes[ix]);
-            return runetoPress;
-        }
-        return null;
-    }
+//#pragma warning disable 0414
+//    private readonly string TwitchHelpMessage = "!{0} click runename [click a rune according to it`s name]";
+//#pragma warning restore 0414
+//
+//    private List<KMSelectable> ProcessTwitchCommand(string command)
+//    {
+//        var runetoPress = new List<KMSelectable>();
+//        Match m;
+//       if ((m = Regex.Match(command, @"^\s*(click)\s+(?<runes>abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Success)
+//       {
+//            var runeName = (m.Groups["runes"].Value);
+//            var ix = Array.IndexOf(ElderFuthark, runeName);
+//            if (ix == -1)
+//                return null;
+//            runetoPress.Add(Runes[ix]);
+//            return runetoPress;
+//        }
+//        return null;
+//    }
+//
 }
 
