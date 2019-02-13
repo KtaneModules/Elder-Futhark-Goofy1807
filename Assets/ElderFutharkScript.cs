@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Linq;
 using KModkit;
 using UnityEngine;
@@ -15,6 +17,7 @@ public class ElderFutharkScript : MonoBehaviour
     private bool moduleSolved;
 
     public KMSelectable[] Runes;
+    public KMSelectable Activator;
     public KMSelectable Module;
     public GameObject[] RuneLetters_1;
     public GameObject[] RuneLetters_2;
@@ -30,6 +33,7 @@ public class ElderFutharkScript : MonoBehaviour
 
     private GameObject[][] RuneLetters;
     private Transform[] RuneTransforms;
+    private Vector3[] RuneParentPos;
 
     private int[] pickedRuneLetters = new int[6];
     private string[] pickedRuneNames = new string[6];
@@ -52,6 +56,8 @@ public class ElderFutharkScript : MonoBehaviour
             StartCoroutine(PebbleWiggle(rune, RuneTransforms[rune].localEulerAngles));
             Audio.PlaySoundAtTransform("RockClick", transform);
             Runes[rune].AddInteractionPunch();
+            if (moduleSolved)
+                return false;
             if (ElderFutharkTranslated[rune].Contains(pickedRuneNamesCipher[currentRune][timesPressed]))
             {
                 Debug.LogFormat(@"[Elder Futhark #{0}] You pressed {1}, expecting {2}. Well Done", moduleId, ElderFutharkTranslated[rune], pickedRuneNamesCipher[currentRune][timesPressed]);
@@ -61,9 +67,13 @@ public class ElderFutharkScript : MonoBehaviour
                     timesPressed = 0;
                     RuneLetters[currentRune][pickedRuneLetters[currentRune]].GetComponent<MeshRenderer>().material = Materials[2];
                     currentRune++;
-                    RuneLetters[currentRune][pickedRuneLetters[currentRune]].GetComponent<MeshRenderer>().material = Materials[1];
                     if (currentRune == 6)
+                    {
                         GetComponent<KMBombModule>().HandlePass();
+                        moduleSolved = true;
+                        return false;
+                    }
+                        RuneLetters[currentRune][pickedRuneLetters[currentRune]].GetComponent<MeshRenderer>().material = Materials[1];
                 }
             }
             else
@@ -82,10 +92,13 @@ public class ElderFutharkScript : MonoBehaviour
         moduleId = moduleIdCounter++;
 
         // Show the runes the first time the module is selected
-        Module.OnInteract += delegate
+        Activator.OnInteract += delegate
         {
             StartCoroutine(CrashDownSetup());
             moduleStarted = true;
+            Activator.gameObject.SetActive(false);
+            Module.Children = Runes;
+            Module.UpdateChildren();
             return true;
         };
 
@@ -108,6 +121,22 @@ public class ElderFutharkScript : MonoBehaviour
         };
         //Assigning RuneTransforms with their childs
         RuneTransforms = Runes.Select(rune => rune.transform.parent).ToArray();
+        RuneParentPos = Runes.Select(rune => rune.transform.parent.transform.localPosition).ToArray();
+
+        //Shuffeling positions
+        var randPos = Enumerable.Range(0, RuneTransforms.Length).ToList();
+
+        for (int i = 0; i < RuneTransforms.Length; i++)
+        {
+            int index = Random.Range(0, randPos.Count);
+            Runes[i].transform.parent.transform.localPosition = RuneParentPos[randPos[index]];
+            DustSystemRunes[i].transform.localPosition = RuneParentPos[randPos[index]];
+            Debug.LogFormat(@"[Elder Futhark #{0}] Position of {1} is now x:{2}, y:{3}, z:{4} based on index {5}", moduleId, Runes[i].name, RuneParentPos[randPos[index]].x, RuneParentPos[randPos[index]].y, RuneParentPos[randPos[index]].z, randPos[index]);
+            Vector3 DustPos = DustSystemRunes[i].transform.localPosition;
+            DustPos.y = 0.01f;
+            DustSystemRunes[i].transform.localPosition = DustPos;
+            randPos.RemoveAt(index);
+        }
 
         //Generating a random 6-letter word
         for (int i = 0; i < RuneLetters.Length; i++)
@@ -146,7 +175,7 @@ public class ElderFutharkScript : MonoBehaviour
             {
                 pickedRuneNamesCipher[i] += AlphabetNumbers[(Array.IndexOf(AlphabetNumbers, char.ToLowerInvariant(pickedRuneName[j])) + Array.IndexOf(AlphabetNumbers, char.ToLowerInvariant(Keywords[i][j % Keywords[i].Length]))) % 26];
             }
-            Debug.LogFormat(@"[Elder Futhark #{0}] The encrypted name of the {1}th rune is {2}. The required sequence for the {1}th rune is: {3}", moduleId, i + 1, pickedRuneNamesCipher[i], "NEEDS WORK");
+            Debug.LogFormat(@"[Elder Futhark #{0}] The encrypted name of the {1}th rune is {2}.", moduleId, i + 1, pickedRuneNamesCipher[i]);
         }
     }
 
@@ -240,4 +269,25 @@ public class ElderFutharkScript : MonoBehaviour
             fact = fact * i;
         return fact;
     }
+
+#pragma warning disable 0414
+    private readonly string TwitchHelpMessage = "!{0} click runename [click a rune according to it`s name]";
+#pragma warning restore 0414
+
+    private List<KMSelectable> ProcessTwitchCommand(string command)
+    {
+        var runetoPress = new List<KMSelectable>();
+        Match m;
+        if ((m = Regex.Match(command, @"^\s*(click)\s+(?<runes>abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Success)
+        {
+            var runeName = (m.Groups["runes"].Value);
+            var ix = Array.IndexOf(ElderFuthark, runeName);
+            if (ix == -1)
+                return null;
+            runetoPress.Add(Runes[ix]);
+            return runetoPress;
+        }
+        return null;
+    }
 }
+
