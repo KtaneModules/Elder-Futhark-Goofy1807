@@ -62,6 +62,8 @@ public class ElderFutharkScript : MonoBehaviour
                     RuneLetters[currentRune][pickedRuneLetters[currentRune]].GetComponent<MeshRenderer>().material = Materials[2];
                     currentRune++;
                     RuneLetters[currentRune][pickedRuneLetters[currentRune]].GetComponent<MeshRenderer>().material = Materials[1];
+                    if (currentRune == 6)
+                        GetComponent<KMBombModule>().HandlePass();
                 }
             }
             else
