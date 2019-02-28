@@ -1480,6 +1480,9 @@ public class TestHarness : MonoBehaviour
         {
 			TestSelectable testSelectable = selectable.gameObject.GetComponent<TestSelectable>();
             testSelectable.Parent = selectable.Parent ? selectable.Parent.GetComponent<TestSelectable>() : null;
+
+            Debug.LogError("Total Children = "+selectable.Children.Length);
+
             testSelectable.Children = new TestSelectable[selectable.Children.Length];
             for (int i = 0; i < selectable.Children.Length; i++)
             {
@@ -1488,6 +1491,8 @@ public class TestHarness : MonoBehaviour
                     testSelectable.Children[i] = selectable.Children[i].GetComponent<TestSelectable>();
                 }
             }
+         
+
         }
     }
 
