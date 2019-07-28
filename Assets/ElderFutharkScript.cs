@@ -21,10 +21,6 @@ public class ElderFutharkScript : MonoBehaviour
     public KMSelectable Module;
     public GameObject[] RuneLetters_1;
     public GameObject[] RuneLetters_2;
-    public GameObject[] RuneLetters_3;
-    public GameObject[] RuneLetters_4;
-    public GameObject[] RuneLetters_5;
-    public GameObject[] RuneLetters_6;
     public Material[] Materials;
     public AudioClip[] Sounds;
 
@@ -35,10 +31,10 @@ public class ElderFutharkScript : MonoBehaviour
     private Transform[] RuneTransforms;
     private Vector3[] RuneParentPos;
 
-    private int[] pickedRuneLetters = new int[6];
-    private string[] pickedRuneNames = new string[6];
-    private string[] pickedRuneNamesCipher = new string[6];
-    private string[] Keywords = new string[6];
+    private int[] pickedRuneLetters = new int[2];
+    private string[] pickedRuneNames = new string[2];
+    private string[] pickedRuneNamesCipher = new string[2];
+    private string[] Keywords = new string[2];
 
     private static readonly string[] ElderFuthark = { "Algiz", "Ansuz", "Berkana", "Dagaz", "Ehwaz", "Eihwaz", "Fehu", "Gebo", "Hagalaz", "Isa", "Jera", "Kenaz", "Laguz", "Mannaz", "Nauthiz", "Othila", "Perthro", "Raido", "Sowulo", "Teiwaz", "Thurisaz", "Uruz", "Wunjo" };
     private static readonly string[] ElderFutharkTranslated = { "z", "a", "b", "d", "e", "y", "f", "g", "h", "i", "j", "c, q, k", "l", "m", "n", "o", "p", "r", "s", "t", "x", "u", "v, w" };
@@ -114,10 +110,6 @@ public class ElderFutharkScript : MonoBehaviour
         {
             RuneLetters_1,
             RuneLetters_2,
-            RuneLetters_3,
-            RuneLetters_4,
-            RuneLetters_5,
-            RuneLetters_6
         };
         //Assigning RuneTransforms with their childs
         RuneTransforms = Runes.Select(rune => rune.transform.parent).ToArray();
