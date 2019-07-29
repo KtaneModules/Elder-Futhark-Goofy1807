@@ -63,13 +63,19 @@ public class ElderFutharkScript : MonoBehaviour
                     timesPressed = 0;
                     RuneLetters[currentRune][pickedRuneLetters[currentRune]].GetComponent<MeshRenderer>().material = Materials[2];
                     currentRune++;
-                    if (currentRune == 6)
+                    if (currentRune == 2)
                     {
                         GetComponent<KMBombModule>().HandlePass();
                         moduleSolved = true;
+                        for (int i = 0; i < currentRune; i++)
+                        {
+                            RuneLetters[i][pickedRuneLetters[i]].gameObject.SetActive(false);
+                        }
+
                         return false;
                     }
-                        RuneLetters[currentRune][pickedRuneLetters[currentRune]].GetComponent<MeshRenderer>().material = Materials[1];
+
+                    RuneLetters[currentRune][pickedRuneLetters[currentRune]].GetComponent<MeshRenderer>().material = Materials[1];
                 }
             }
             else
@@ -78,7 +84,7 @@ public class ElderFutharkScript : MonoBehaviour
                 Debug.LogFormat(@"[Elder Futhark #{0}] You pressed {1}, expecting {2}. Strike. Rune resetted", moduleId, ElderFutharkTranslated[rune], pickedRuneNamesCipher[currentRune][timesPressed]);
                 timesPressed = 0;
             }
-            
+
             return false;
         };
     }
@@ -93,8 +99,8 @@ public class ElderFutharkScript : MonoBehaviour
             StartCoroutine(CrashDownSetup());
             moduleStarted = true;
             Activator.gameObject.SetActive(false);
-           Module.Children = Runes;
-           UpdateChildren();
+            Module.Children = Runes;
+            UpdateChildren();
             return true;
         };
 
@@ -123,14 +129,13 @@ public class ElderFutharkScript : MonoBehaviour
             int index = Random.Range(0, randPos.Count);
             Runes[i].transform.parent.transform.localPosition = RuneParentPos[randPos[index]];
             DustSystemRunes[i].transform.localPosition = RuneParentPos[randPos[index]];
-            Debug.LogFormat(@"[Elder Futhark #{0}] Position of {1} is now x:{2}, y:{3}, z:{4} based on index {5}", moduleId, Runes[i].name, RuneParentPos[randPos[index]].x, RuneParentPos[randPos[index]].y, RuneParentPos[randPos[index]].z, randPos[index]);
             Vector3 DustPos = DustSystemRunes[i].transform.localPosition;
             DustPos.y = 0.01f;
             DustSystemRunes[i].transform.localPosition = DustPos;
             randPos.RemoveAt(index);
         }
 
-        //Generating a random 6-letter word
+        //Generating a random 2-letter word
         for (int i = 0; i < RuneLetters.Length; i++)
         {
             pickedRuneLetters[i] = Random.Range(0, RuneLetters[i].Length);
@@ -138,16 +143,12 @@ public class ElderFutharkScript : MonoBehaviour
             Debug.LogFormat(@"[Elder Futhark #{0}] The {1}th rune is {2}", moduleId, i + 1, pickedRuneNames[i]);
         }
 
-        //Generating 6 keywords
+        //Generating 2 keywords
 
         for (int i = 0; i < Keywords.Length; i++)
         {
             if (pickedRuneNames[i].ToUpper().Any(x => x == 'E' || x == 'O'))
                 Keywords[i] += AlphabetNumbers[(Bomb.GetSerialNumberNumbers().Last() + 10) % 26];
-            if ((i + 1) % 2 == 0)
-                Keywords[i] += AlphabetNumbers[Bomb.GetSolvableModuleNames().Count() / Bomb.GetSerialNumberLetters().Count() * Bomb.GetPortPlateCount() % 26];
-            if ((i + 1) % 3 == 0)
-                Keywords[i] += AlphabetNumbers[Factorial(Bomb.GetOffIndicators().Count()) % 26];
             if (pickedRuneNames[i].Length < 5)
                 Keywords[i] += AlphabetNumbers[Bomb.GetIndicators().Count() + Bomb.GetBatteryHolderCount() % 26];
             Keywords[i] += AlphabetNumbers[i];
@@ -157,7 +158,7 @@ public class ElderFutharkScript : MonoBehaviour
 
         }
 
-        //Crypting the name of each rune in the 6-letter word
+        //Crypting the name of each rune in the 2-letter word
         for (int i = 0; i < pickedRuneNames.Length; i++)
         {
             string pickedRuneName = pickedRuneNames[i];
@@ -265,44 +266,38 @@ public class ElderFutharkScript : MonoBehaviour
     public void UpdateChildren()
     {
         GetComponent<KMSelectable>().UpdateChildren();
-        #if UNITY_EDITOR
-        for (int i = 0; i < GetComponent<KMSelectable>().Children.Count(); i++)
-        {
-            var selectable = GetComponent<KMSelectable>().Children[i];
-            if (selectable == null && GetComponent<TestSelectable>().Children[i] != null)
-            {
-                Destroy(GetComponent<TestSelectable>().Children[i].GetComponentInChildren<TestSelectableArea>());
-                GetComponent<TestSelectable>().Children[i] = null;
-            }
-            else if (selectable != null && GetComponent<TestSelectable>().Children[i] == null)
-            {
-                selectable.gameObject.AddComponent<TestSelectable>();
-                GetComponent<TestSelectable>().Children[i] = selectable.GetComponent<TestSelectable>();
-            }
-
-        }
-        #endif
     }
 
-//#pragma warning disable 0414
-//    private readonly string TwitchHelpMessage = "!{0} click runename [click a rune according to it`s name]";
-//#pragma warning restore 0414
-//
-//    private List<KMSelectable> ProcessTwitchCommand(string command)
-//    {
-//        var runetoPress = new List<KMSelectable>();
-//        Match m;
-//       if ((m = Regex.Match(command, @"^\s*(click)\s+(?<runes>abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Success)
-//       {
-//            var runeName = (m.Groups["runes"].Value);
-//            var ix = Array.IndexOf(ElderFuthark, runeName);
-//            if (ix == -1)
-//                return null;
-//            runetoPress.Add(Runes[ix]);
-//            return runetoPress;
-//        }
-//        return null;
-//    }
-//
+#pragma warning disable 0414
+    private readonly string TwitchHelpMessage = "!{0} activate [to start the module] | !{0} submit <encrypted runename> [submit a sequence of runes]";
+#pragma warning restore 0414
+
+    private IEnumerable<KMSelectable> ProcessTwitchCommand(string command)
+    {
+        var runetoPress = new List<KMSelectable>();
+        Match m;
+        if ((m = Regex.Match(command, @"^\s*(click|enter|submit|type|press|touch|fiddle)\s+(?<runes>[ABCDEFGHIJKLMNOPQRSTUVWXYZ]+)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Success && moduleStarted)
+        {
+            for (int i = 0; i < m.Groups["runes"].Value.Length; i++)
+            {
+                var runeName = m.Groups["runes"].Value[i];
+                var ix = -1;
+                for (var j = 0; j < ElderFutharkTranslated.Length && ix == -1; j++)
+                    if (ElderFutharkTranslated[j].Contains(runeName))
+                        ix = j;
+                if (ix == -1)
+                    return null;
+                runetoPress.Add(Runes[ix]);
+            }
+
+            return runetoPress;
+        }
+        else if ((m = Regex.Match(command, @"^\s*(start|go|activate|engage|tap|touch)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Success && !moduleStarted)
+        {
+            return new[] { Activator };
+        }
+        return null;
+    }
+
 }
 
