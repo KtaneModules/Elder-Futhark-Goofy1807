@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Linq;
+using System.Text.RegularExpressions;
 using KModkit;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -175,7 +175,6 @@ public class ElderFutharkScript : MonoBehaviour
     //Placing the word on the module
     private IEnumerator SetWord()
     {
-
         for (int i = 0; i < RuneLetters.Length; i++)
         {
             Audio.PlaySoundAtTransform("RuneLetters", transform);
@@ -187,7 +186,6 @@ public class ElderFutharkScript : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
         RuneLetters[currentRune][pickedRuneLetters[currentRune]].GetComponent<MeshRenderer>().material = Materials[1];
-
     }
 
     //Making the pebbles wiggle
