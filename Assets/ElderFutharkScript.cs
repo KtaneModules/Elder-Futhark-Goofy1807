@@ -63,6 +63,7 @@ public class ElderFutharkScript : MonoBehaviour
                     timesPressed = 0;
                     RuneLetters[currentRune][pickedRuneLetters[currentRune]].GetComponent<MeshRenderer>().material = Materials[2];
                     currentRune++;
+                    Debug.LogFormat(@"[Elder Futhark #{0}] Rune no. {1} was solved", moduleId, currentRune);
                     if (currentRune == 2)
                     {
                         GetComponent<KMBombModule>().HandlePass();
@@ -121,7 +122,7 @@ public class ElderFutharkScript : MonoBehaviour
         RuneTransforms = Runes.Select(rune => rune.transform.parent).ToArray();
         RuneParentPos = Runes.Select(rune => rune.transform.parent.transform.localPosition).ToArray();
 
-        //Shuffeling positions
+        //Shuffling positions
         var randPos = Enumerable.Range(0, RuneTransforms.Length).ToList();
 
         for (int i = 0; i < RuneTransforms.Length; i++)
@@ -147,7 +148,7 @@ public class ElderFutharkScript : MonoBehaviour
 
         for (int i = 0; i < Keywords.Length; i++)
         {
-            if (pickedRuneNames[i].ToUpper().Any(x => x == 'E' || x == 'O'))
+            if (pickedRuneNames[i].ToUpperInvariant().Any(x => x == 'E' || x == 'O'))
                 Keywords[i] += AlphabetNumbers[(Bomb.GetSerialNumberNumbers().Last() + 10) % 26];
             if (pickedRuneNames[i].Length < 5)
                 Keywords[i] += AlphabetNumbers[Bomb.GetIndicators().Count() + Bomb.GetBatteryHolderCount() % 26];
@@ -164,7 +165,6 @@ public class ElderFutharkScript : MonoBehaviour
             string pickedRuneName = pickedRuneNames[i];
 
             for (int j = 0; j < pickedRuneName.Length; j++)
-
             {
                 pickedRuneNamesCipher[i] += AlphabetNumbers[(Array.IndexOf(AlphabetNumbers, char.ToLowerInvariant(pickedRuneName[j])) + Array.IndexOf(AlphabetNumbers, char.ToLowerInvariant(Keywords[i][j % Keywords[i].Length]))) % 26];
             }
@@ -267,22 +267,35 @@ public class ElderFutharkScript : MonoBehaviour
     }
 
 #pragma warning disable 0414
-    private readonly string TwitchHelpMessage = "!{0} activate [to start the module] | !{0} submit <encrypted runename> [submit a sequence of runes]";
+    private readonly string TwitchHelpMessage = "!{0} activate [to start the module] | !{0} submit eihwaz, hagalaz, fehu [submit the runenames]";
 #pragma warning restore 0414
+
+    private static int IndexOf<T>(IEnumerable<T> source, Func<T, bool> predicate)
+    {
+        var i = 0;
+        foreach (var obj in source)
+        {
+            if (predicate(obj))
+                return i;
+            i++;
+        }
+        return -1;
+    }
 
     private IEnumerable<KMSelectable> ProcessTwitchCommand(string command)
     {
         var runetoPress = new List<KMSelectable>();
         Match m;
-        if ((m = Regex.Match(command, @"^\s*(click|enter|submit|type|press|touch|fiddle)\s+(?<runes>[ABCDEFGHIJKLMNOPQRSTUVWXYZ]+)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Success && moduleStarted)
+        if ((m = Regex.Match(command, @"^\s*(click|enter|submit|type|press|touch|fiddle)\s+(?<runes>[ABCDEFGHIJKLMNOPQRSTUVWXYZ, ]+)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).Success && moduleStarted)
         {
-            for (int i = 0; i < m.Groups["runes"].Value.Length; i++)
+            var runenames = m.Groups["runes"].Value.Split(',').ToArray();
+            for (int i = 0; i < runenames.Length; i++)
             {
-                var runeName = m.Groups["runes"].Value[i];
-                var ix = -1;
-                for (var j = 0; j < ElderFutharkTranslated.Length && ix == -1; j++)
-                    if (ElderFutharkTranslated[j].Contains(runeName))
-                        ix = j;
+                if (Regex.IsMatch(runenames[i], @"^\s*$"))
+                    continue;
+
+                var ix = IndexOf(ElderFuthark, rune => rune.EqualsIgnoreCase(runenames[i].Trim()));
+                
                 if (ix == -1)
                     return null;
                 runetoPress.Add(Runes[ix]);
