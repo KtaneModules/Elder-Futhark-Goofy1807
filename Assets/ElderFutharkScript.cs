@@ -23,6 +23,7 @@ public class ElderFutharkScript : MonoBehaviour
     public GameObject[] RuneLetters_2;
     public Material[] Materials;
     public AudioClip[] Sounds;
+    public KMRuleSeedable RuleSeedable;
 
     public GameObject[] DustSystemLetters;
     public GameObject[] DustSystemRunes;
@@ -33,12 +34,10 @@ public class ElderFutharkScript : MonoBehaviour
 
     private int[] pickedRuneLetters = new int[2];
     private string[] pickedRuneNames = new string[2];
-    private string[] pickedRuneNamesCipher = new string[2];
-    private string[] Keywords = new string[2];
+    private int[][] pickedRuneNamesCipher;
 
-    private static readonly string[] ElderFuthark = { "Algiz", "Ansuz", "Berkana", "Dagaz", "Ehwaz", "Eihwaz", "Fehu", "Gebo", "Hagalaz", "Isa", "Jera", "Kenaz", "Laguz", "Mannaz", "Nauthiz", "Othila", "Perthro", "Raido", "Sowulo", "Teiwaz", "Thurisaz", "Uruz", "Wunjo" };
-    private static readonly string[] ElderFutharkTranslated = { "z", "a", "b", "d", "e", "y", "f", "g", "h", "i", "j", "c, q, k", "l", "m", "n", "o", "p", "r", "s", "t", "x", "u", "v, w" };
-    private static readonly char[] AlphabetNumbers = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
+    private static readonly string[] ElderFuthark = { "Ansuz", "Berkana", "Kenaz", "Dagaz", "Ehwaz", "Fehu", "Gebo", "Hagalaz", "Isa", "Jera", "Eihwaz", "Laguz", "Mannaz", "Nauthiz", "Othila", "Perthro", "Algiz", "Raido", "Sowulo", "Teiwaz", "Uruz", "Wunjo", "Thurisaz" };
+    private static readonly string[] ElderFutharkTranslated = { "a", "b", "c, q, k", "d", "e", "f", "g", "h", "i", "j", "y", "l", "m", "n", "o", "p", "z", "r", "s", "t", "u", "v, w", "x" };
 
     private bool moduleStarted = false;
 
@@ -54,16 +53,16 @@ public class ElderFutharkScript : MonoBehaviour
             Runes[rune].AddInteractionPunch();
             if (moduleSolved)
                 return false;
-            if (ElderFutharkTranslated[rune].Contains(pickedRuneNamesCipher[currentRune][timesPressed]))
+            if (rune == pickedRuneNamesCipher[currentRune][timesPressed])
             {
-                Debug.LogFormat(@"[Elder Futhark #{0}] You pressed {1}, expecting {2}. Well Done", moduleId, ElderFutharkTranslated[rune], pickedRuneNamesCipher[currentRune][timesPressed]);
+                Debug.LogFormat(@"[Elder Futhark #{0}] You pressed {1}, expecting {2}. Well done!", moduleId, ElderFuthark[rune], ElderFuthark[pickedRuneNamesCipher[currentRune][timesPressed]]);
                 timesPressed++;
                 if (timesPressed == pickedRuneNamesCipher[currentRune].Length)
                 {
                     timesPressed = 0;
                     RuneLetters[currentRune][pickedRuneLetters[currentRune]].GetComponent<MeshRenderer>().material = Materials[2];
                     currentRune++;
-                    Debug.LogFormat(@"[Elder Futhark #{0}] Rune no. {1} was solved", moduleId, currentRune);
+                    Debug.LogFormat(@"[Elder Futhark #{0}] Rune no. {1} is solved.", moduleId, currentRune);
                     if (currentRune == 2)
                     {
                         GetComponent<KMBombModule>().HandlePass();
@@ -82,7 +81,7 @@ public class ElderFutharkScript : MonoBehaviour
             else
             {
                 GetComponent<KMBombModule>().HandleStrike();
-                Debug.LogFormat(@"[Elder Futhark #{0}] You pressed {1}, expecting {2}. Strike. Rune resetted", moduleId, ElderFutharkTranslated[rune], pickedRuneNamesCipher[currentRune][timesPressed]);
+                Debug.LogFormat(@"[Elder Futhark #{0}] You pressed {1}, expecting {2}. Strike. Rune resetted", moduleId, ElderFuthark[rune], ElderFuthark[pickedRuneNamesCipher[currentRune][timesPressed]]);
                 timesPressed = 0;
             }
 
@@ -112,17 +111,14 @@ public class ElderFutharkScript : MonoBehaviour
             Runes[i].OnInteract += RunePressed(i);
         }
 
-        //Assigning RuneLetters with the different positions
-        RuneLetters = new[]
-        {
-            RuneLetters_1,
-            RuneLetters_2,
-        };
-        //Assigning RuneTransforms with their childs
+        // Assign RuneLetters with the different positions
+        RuneLetters = new[] { RuneLetters_1, RuneLetters_2 };
+
+        // Assign RuneTransforms with their childs
         RuneTransforms = Runes.Select(rune => rune.transform.parent).ToArray();
         RuneParentPos = Runes.Select(rune => rune.transform.parent.transform.localPosition).ToArray();
 
-        //Shuffling positions
+        // Shuffle positions
         var randPos = Enumerable.Range(0, RuneTransforms.Length).ToList();
 
         for (int i = 0; i < RuneTransforms.Length; i++)
@@ -136,41 +132,73 @@ public class ElderFutharkScript : MonoBehaviour
             randPos.RemoveAt(index);
         }
 
-        //Generating a random 2-letter word
+        // Generate a random 2-letter word
         for (int i = 0; i < RuneLetters.Length; i++)
         {
             pickedRuneLetters[i] = Random.Range(0, RuneLetters[i].Length);
             pickedRuneNames[i] = ElderFuthark[pickedRuneLetters[i]];
-            Debug.LogFormat(@"[Elder Futhark #{0}] The {1}th rune is {2}", moduleId, i + 1, pickedRuneNames[i]);
+            Debug.LogFormat(@"[Elder Futhark #{0}] The {1} rune is {2}", moduleId, i == 0 ? "first" : "second", pickedRuneNames[i]);
         }
 
-        //Generating 2 keywords
+        // Rule-seeded rules
+        var rnd = RuleSeedable.GetRNG();
+        Debug.LogFormat(@"[Elder Futhark #{0}] Using rule seed: {1}.", moduleId, rnd.Seed);
+        var cycleLeft = rnd.Seed == 1 ? false : rnd.Next(0, 2) != 0;
 
-        for (int i = 0; i < Keywords.Length; i++)
-        {
-            if (pickedRuneNames[i].ToUpperInvariant().Any(x => x == 'E' || x == 'O'))
-                Keywords[i] += AlphabetNumbers[(Bomb.GetSerialNumberNumbers().Last() + 10) % 26];
-            if (pickedRuneNames[i].Length < 5)
-                Keywords[i] += AlphabetNumbers[Bomb.GetIndicators().Count() + Bomb.GetBatteryHolderCount() % 26];
-            Keywords[i] += AlphabetNumbers[i];
-            Keywords[i] += AlphabetNumbers[pickedRuneNames[i].Length * 10 % 26];
-            Keywords[i] += AlphabetNumbers[(i + 1 + pickedRuneNames[i].Length) % 26];
-            Debug.LogFormat(@"[Elder Futhark #{0}] The keyword for the {1}th rune is {2}", moduleId, i + 1, Keywords[i]);
+        var edgeworkConditions = newArray
+        (
+            // the sum of the digits in the serial number
+            Bomb.GetSerialNumberNumbers().Sum(),
+            // the sum of the first three characters in the serial number (use alphabetic positions for letters)
+            Bomb.GetSerialNumber().Take(3).Select(ch => ch >= 'A' && ch <= 'Z' ? ch - 'A' + 1 : ch - '0').Sum(),
+            // the sum of the last three characters in the serial number (use alphabetic positions for letters)
+            Bomb.GetSerialNumber().Skip(3).Select(ch => ch >= 'A' && ch <= 'Z' ? ch - 'A' + 1 : ch - '0').Sum(),
+            // the number of ports
+            Bomb.GetPortCount(),
+            // the number of indicators
+            Bomb.GetIndicators().Count(),
+            // the number of batteries
+            Bomb.GetBatteryCount(),
+            // the number of ports plus indicators
+            Bomb.GetPortCount() + Bomb.GetIndicators().Count(),
+            // the number of ports plus batteries
+            Bomb.GetPortCount() + Bomb.GetBatteryCount(),
+            // the number of indicators plus batteries
+            Bomb.GetIndicators().Count() + Bomb.GetBatteryCount()
+        );
+        var edgeworkCondition = rnd.Seed == 1 ? 0 : rnd.Next(0, edgeworkConditions.Length);
+        var modulo = rnd.Seed == 1 ? 6 : rnd.Next(4, 9);
 
-        }
+        var rowShuffle = rnd.ShuffleFisherYates(Enumerable.Range(0, 23).ToArray());
+        var columnShuffle = rnd.ShuffleFisherYates(Enumerable.Range(0, 23).ToArray());
 
-        //Crypting the name of each rune in the 2-letter word
-        for (int i = 0; i < pickedRuneNames.Length; i++)
-        {
-            string pickedRuneName = pickedRuneNames[i];
+        // Find the encryption key
+        var name1 = pickedRuneNames[0].ToLowerInvariant();
+        var name2 = pickedRuneNames[1].ToLowerInvariant();
+        if (name1.Length < name2.Length)
+            name1 = Enumerable.Range(0, name2.Length).Select(ix => name1[ix % name1.Length]).Join("");
+        else
+            name2 = Enumerable.Range(0, name1.Length).Select(ix => name2[ix % name2.Length]).Join("");
+        var interweaved = Enumerable.Range(0, name1.Length).Select(ix => name1[ix].ToString() + name2[ix].ToString()).Join("");
+        var cycleAmount = edgeworkConditions[edgeworkCondition] % modulo;
+        if (cycleLeft)
+            cycleAmount = interweaved.Length - cycleAmount;
+        var encryptionKey = (interweaved.Substring(interweaved.Length - cycleAmount) + interweaved.Substring(0, interweaved.Length - cycleAmount)).Substring(0, pickedRuneNames[0].Length + pickedRuneNames[1].Length);
+        Debug.LogFormat(@"[Elder Futhark #{0}] The encryption key is {1}.", moduleId, encryptionKey);
 
-            for (int j = 0; j < pickedRuneName.Length; j++)
-            {
-                pickedRuneNamesCipher[i] += AlphabetNumbers[(Array.IndexOf(AlphabetNumbers, char.ToLowerInvariant(pickedRuneName[j])) + Array.IndexOf(AlphabetNumbers, char.ToLowerInvariant(Keywords[i][j % Keywords[i].Length]))) % 26];
-            }
-            Debug.LogFormat(@"[Elder Futhark #{0}] The encrypted name of the {1}th rune is {2}.", moduleId, i + 1, pickedRuneNamesCipher[i]);
-        }
+        // Encrypt the name of both runes together
+        var transliteratedRunes = (pickedRuneNames[0] + pickedRuneNames[1]).ToLowerInvariant().Select(ch => ElderFutharkTranslated.IndexOf(tr => tr.Contains(ch))).ToArray();
+        var transliteratedKey = encryptionKey.Select(ch => ElderFutharkTranslated.IndexOf(tr => tr.Contains(ch))).ToArray();
+        var ciphered = transliteratedRunes.Select((ch, ix) => (columnShuffle[ch] + rowShuffle[transliteratedKey[ix]]) % 23).ToArray();
+        pickedRuneNamesCipher = newArray(
+            ciphered.Take(pickedRuneNames[0].Length).ToArray(),
+            ciphered.Skip(pickedRuneNames[0].Length).ToArray()
+        );
+        Debug.LogFormat(@"[Elder Futhark #{0}] The encrypted first rune is: {1}.", moduleId, pickedRuneNamesCipher[0].Select(ix => ElderFuthark[ix]).Join(", "));
+        Debug.LogFormat(@"[Elder Futhark #{0}] The encrypted second rune is: {1}.", moduleId, pickedRuneNamesCipher[1].Select(ix => ElderFuthark[ix]).Join(", "));
     }
+
+    private T[] newArray<T>(params T[] array) { return array; }
 
     //Placing the word on the module
     private IEnumerator SetWord()
@@ -295,7 +323,7 @@ public class ElderFutharkScript : MonoBehaviour
                     continue;
 
                 var ix = IndexOf(ElderFuthark, rune => rune.EqualsIgnoreCase(runenames[i].Trim()));
-                
+
                 if (ix == -1)
                     return null;
                 runetoPress.Add(Runes[ix]);
