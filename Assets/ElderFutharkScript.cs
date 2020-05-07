@@ -32,10 +32,21 @@ public class ElderFutharkScript : MonoBehaviour
     private GameObject[][] RuneLetters;
     private Transform[] RuneTransforms;
     private Vector3[] RuneParentPos;
+    private List<KMSelectable> RuneOrder = new List<KMSelectable>();
 
     private int[] pickedRuneLetters = new int[3];
     private string[] pickedRuneNames = new string[3];
     private int[][] pickedRuneNamesCipher;
+    //The order of runes on the module [Gamepad Support]
+    private readonly int[] selectableLocations = new[]
+    {
+        22, 5, 0, 17,
+        7, 8, 2, 10,
+        4, 9, 6,
+        16, 19, 3, 1, 11,
+        21, 13, 15,
+        18, 14, 20, 12
+    };
 
     private static readonly string[] ElderFuthark = { "Ansuz", "Berkana", "Kenaz", "Dagaz", "Ehwaz", "Fehu", "Gebo", "Hagalaz", "Isa", "Jera", "Eihwaz", "Laguz", "Mannaz", "Nauthiz", "Othila", "Perthro", "Algiz", "Raido", "Sowulo", "Teiwaz", "Uruz", "Wunjo", "Thurisaz" };
     private static readonly string[] ElderFutharkTranslated = { "a", "b", "c, q, k", "d", "e", "f", "g", "h", "i", "j", "y", "l", "m", "n", "o", "p", "z", "r", "s", "t", "u", "v, w", "x" };
@@ -103,7 +114,9 @@ public class ElderFutharkScript : MonoBehaviour
             StartCoroutine(CrashDownSetup());
             moduleStarted = true;
             Activator.gameObject.SetActive(false);
-            Module.Children = Runes;
+            GamepadSupport();
+            Module.Children = RuneOrder.ToArray();
+            RuneOrder.Clear();
             UpdateChildren();
             return false;
         };
@@ -120,21 +133,25 @@ public class ElderFutharkScript : MonoBehaviour
 
         // Assign RuneTransforms with their childs
         RuneTransforms = Runes.Select(rune => rune.transform.parent).ToArray();
-        RuneParentPos = Runes.Select(rune => rune.transform.parent.transform.localPosition).ToArray();
+        RuneParentPos = Runes.Select(rune => rune.transform.parent.localPosition).ToArray();
 
         // Shuffle positions
         var randPos = Enumerable.Range(0, RuneTransforms.Length).ToList();
+        var runeOrder = new KMSelectable[Runes.Length];
 
         for (int i = 0; i < RuneTransforms.Length; i++)
         {
             int index = Random.Range(0, randPos.Count);
-            Runes[i].transform.parent.transform.localPosition = RuneParentPos[randPos[index]];
+            RuneTransforms[i].localPosition = RuneParentPos[randPos[index]];
             DustSystemRunes[i].transform.localPosition = RuneParentPos[randPos[index]];
             Vector3 DustPos = DustSystemRunes[i].transform.localPosition;
             DustPos.y = 0.01f;
             DustSystemRunes[i].transform.localPosition = DustPos;
+            runeOrder[Array.IndexOf(selectableLocations, randPos[index])] = Runes[i];
             randPos.RemoveAt(index);
         }
+
+        RuneOrder = runeOrder.ToList();
 
         // Generate a random 3-letter word
         for (int i = 0; i < RuneLetters.Length; i++)
@@ -293,7 +310,26 @@ public class ElderFutharkScript : MonoBehaviour
 
     public void UpdateChildren()
     {
-        GetComponent<KMSelectable>().UpdateChildren();
+        Module.UpdateChildren(Module);
+    }
+
+    private void GamepadSupport()
+    {
+        //These are empty spots in the grid
+        var pattern = new[] {
+            2, 4, 6, 7,
+            9, 10, 13, 15,
+            16, 17, 19, 20, 22,
+            26, 29, 31,
+            32, 33, 35, 36, 38,
+            40, 44
+        };
+
+        //Insert the empty spots into the list of selectables
+        for (int i = 0; i < pattern.Length; i++)
+            RuneOrder.Insert(pattern[i], null);
+        //The last two slots are empty
+        RuneOrder.AddRange(new KMSelectable[] { null, null });
     }
 
     private static int IndexOf<T>(IEnumerable<T> source, Func<T, bool> predicate)
