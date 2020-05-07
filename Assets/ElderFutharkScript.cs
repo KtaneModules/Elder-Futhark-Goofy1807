@@ -44,6 +44,7 @@ public class ElderFutharkScript : MonoBehaviour
 
     private int currentRune = 0;
     private int timesPressed = 0;
+    private bool setupDone = false;
 
     private KMSelectable.OnInteractHandler RunePressed(int rune)
     {
@@ -97,12 +98,14 @@ public class ElderFutharkScript : MonoBehaviour
         // Show the runes the first time the module is selected
         Activator.OnInteract += delegate
         {
+            if (moduleStarted)
+                return false;
             StartCoroutine(CrashDownSetup());
             moduleStarted = true;
             Activator.gameObject.SetActive(false);
             Module.Children = Runes;
             UpdateChildren();
-            return true;
+            return false;
         };
 
         // Set the runes to invisible until they appear
@@ -220,6 +223,7 @@ public class ElderFutharkScript : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
         RuneLetters[currentRune][pickedRuneLetters[currentRune]].GetComponent<MeshRenderer>().material = Materials[1];
+        setupDone = true;
     }
 
     //Making the pebbles wiggle
@@ -284,17 +288,13 @@ public class ElderFutharkScript : MonoBehaviour
         }
 
         yield return new WaitForSeconds(0.5f);
-        StartCoroutine(SetWord());
+        yield return StartCoroutine(SetWord());
     }
 
     public void UpdateChildren()
     {
         GetComponent<KMSelectable>().UpdateChildren();
     }
-
-#pragma warning disable 0414
-    private readonly string TwitchHelpMessage = "!{0} activate [to start the module] | !{0} submit eihwaz, hagalaz, fehu [submit the runenames]";
-#pragma warning restore 0414
 
     private static int IndexOf<T>(IEnumerable<T> source, Func<T, bool> predicate)
     {
@@ -307,6 +307,10 @@ public class ElderFutharkScript : MonoBehaviour
         }
         return -1;
     }
+
+#pragma warning disable 0414
+    private readonly string TwitchHelpMessage = "!{0} activate [to start the module] | !{0} submit eihwaz, hagalaz, fehu [submit the runenames]";
+#pragma warning restore 0414
 
     private IEnumerable<KMSelectable> ProcessTwitchCommand(string command)
     {
@@ -333,8 +337,24 @@ public class ElderFutharkScript : MonoBehaviour
         {
             return new[] { Activator };
         }
-        return null;
+        else
+
+            return null;
     }
 
+    IEnumerator TwitchHandleForcedSolve()
+    {
+        Debug.LogFormat(@"[Elder Futhark #{0}] Module was force solved by TP", moduleId);
+
+        Activator.OnInteract();
+        while (!setupDone)
+            yield return true;
+
+        while (!moduleSolved)
+        {
+            Runes[pickedRuneNamesCipher[currentRune][timesPressed]].OnInteract();
+            yield return new WaitForSeconds(0.1f);
+        }
+    }
 }
 
