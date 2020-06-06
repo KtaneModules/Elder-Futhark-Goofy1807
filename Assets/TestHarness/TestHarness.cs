@@ -1467,7 +1467,11 @@ public class TestHarness : MonoBehaviour
 						currentSelectable.ActivateChildSelectableAreas();
 
 						if (select != null)
-							select.GetComponent<TestSelectable>().Select();
+						{
+							var selectTest = select.GetComponent<TestSelectable>();
+							selectTest.Select();
+							lastSelected = selectTest;
+						}
 					}
 
 				};

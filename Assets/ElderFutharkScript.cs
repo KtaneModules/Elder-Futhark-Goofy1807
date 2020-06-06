@@ -32,10 +32,27 @@ public class ElderFutharkScript : MonoBehaviour
     private GameObject[][] RuneLetters;
     private Transform[] RuneTransforms;
     private Vector3[] RuneParentPos;
+    private KMSelectable[] RuneOrder;
 
     private int[] pickedRuneLetters = new int[3];
     private string[] pickedRuneNames = new string[3];
     private int[][] pickedRuneNamesCipher;
+    //The order of runes on the module [Gamepad Support]
+    /*
+     *  Thurisaz, Fehu, Ansuz, Raido, Eihwaz,
+     *  Hagalaz, Ehwaz, Isa, Kenaz, Jera, Gebo,
+     *  Algiz, Teiwaz, Dagaz, Berkana, Laguz,
+     *  Sowulo, Wunjo, Uruz, Nauthiz, Perthro,
+     *  Othila, Mannaz
+     * */
+    private readonly int[] selectableLocations = new[]
+    {
+        22, -1, 5, 0, -1, 17, 10,
+        7, -1, 4, 8, 2, 9, 6,
+        16, 19, -1, 3, 1, -1, 11,
+        -1, 18, 21, 20, -1, 13, 15,
+        -1, -1, 14, -1, -1, 12, -1
+    };
 
     private static readonly string[] ElderFuthark = { "Ansuz", "Berkana", "Kenaz", "Dagaz", "Ehwaz", "Fehu", "Gebo", "Hagalaz", "Isa", "Jera", "Eihwaz", "Laguz", "Mannaz", "Nauthiz", "Othila", "Perthro", "Algiz", "Raido", "Sowulo", "Teiwaz", "Uruz", "Wunjo", "Thurisaz" };
     private static readonly string[] ElderFutharkTranslated = { "a", "b", "c, q, k", "d", "e", "f", "g", "h", "i", "j", "y", "l", "m", "n", "o", "p", "z", "r", "s", "t", "u", "v, w", "x" };
@@ -103,7 +120,9 @@ public class ElderFutharkScript : MonoBehaviour
             StartCoroutine(CrashDownSetup());
             moduleStarted = true;
             Activator.gameObject.SetActive(false);
-            Module.Children = Runes;
+            // This doesn't appear to work on the latest version of KTaNE
+            //GamepadSupport();
+            Module.Children = RuneOrder.ToArray();
             UpdateChildren();
             return false;
         };
@@ -120,21 +139,25 @@ public class ElderFutharkScript : MonoBehaviour
 
         // Assign RuneTransforms with their childs
         RuneTransforms = Runes.Select(rune => rune.transform.parent).ToArray();
-        RuneParentPos = Runes.Select(rune => rune.transform.parent.transform.localPosition).ToArray();
+        RuneParentPos = Runes.Select(rune => rune.transform.parent.localPosition).ToArray();
 
         // Shuffle positions
         var randPos = Enumerable.Range(0, RuneTransforms.Length).ToList();
+        var runeOrder = new KMSelectable[selectableLocations.Length];
 
         for (int i = 0; i < RuneTransforms.Length; i++)
         {
             int index = Random.Range(0, randPos.Count);
-            Runes[i].transform.parent.transform.localPosition = RuneParentPos[randPos[index]];
+            RuneTransforms[i].localPosition = RuneParentPos[randPos[index]];
             DustSystemRunes[i].transform.localPosition = RuneParentPos[randPos[index]];
             Vector3 DustPos = DustSystemRunes[i].transform.localPosition;
             DustPos.y = 0.01f;
             DustSystemRunes[i].transform.localPosition = DustPos;
+            runeOrder[Array.IndexOf(selectableLocations, randPos[index])] = Runes[i];
             randPos.RemoveAt(index);
         }
+
+        RuneOrder = runeOrder.ToArray();
 
         // Generate a random 3-letter word
         for (int i = 0; i < RuneLetters.Length; i++)
@@ -293,7 +316,38 @@ public class ElderFutharkScript : MonoBehaviour
 
     public void UpdateChildren()
     {
-        GetComponent<KMSelectable>().UpdateChildren();
+        Module.UpdateChildren(Module);
+    }
+
+    private void GamepadSupport()
+    {
+        var runeOrder = RuneOrder.ToArray();
+        /* selectableLocations:
+         *  - Contains an array of index values for runes based on their order in Runes[]
+         *  - This array is ordered based on the best grid layout I could find for Gamepad support.
+         * locationDuplicates:
+         *  - Take all of the values from selectableLocations and save them as [index: value]
+         *  - Only take values that are duplicated, and are not intended to be null (y != -1)
+         *  - Make sure duplicated values are ordered properly so that they are assigned
+         *    with the last saved value
+         * duplicatedValue:
+         *  - The first value is the original rune index that was duplicated in selectableLocations
+         *    We use this value to determine when we should change the last saved value
+         *  - The second value is the index of Runes[] that we want to duplicate
+         *    This is "the last saved value"
+         */
+        var locationDuplicates = selectableLocations.Select((x, i) => new[] { i, x })
+            .Where(x => selectableLocations.Count(y => (x[1] == y) && (y != -1)) > 1)
+            .OrderBy(x => x[1]).ToList();
+        var duplicatedValue = new[] { -1, 0 };
+        foreach (int[] dupe in locationDuplicates)
+        {
+            if (duplicatedValue[0] != dupe[1])
+                duplicatedValue = new[] { dupe[1], dupe[0] };
+            runeOrder[dupe[0]] = runeOrder[duplicatedValue[1]];
+        }
+
+        RuneOrder = runeOrder.ToArray();
     }
 
     private static int IndexOf<T>(IEnumerable<T> source, Func<T, bool> predicate)
